@@ -1,1 +1,31 @@
+name: C
 
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install eBPF
+      run: |
+        sudo apt install linux-headers-$(uname -r) \
+                 libbpfcc-dev \
+                 libbpf-dev \
+                 llvm \
+                 clang \
+                 gcc-multilib \
+                 build-essential \
+                 linux-tools-$(uname -r) \
+                 linux-tools-common \
+                 linux-tools-generic
+    - name: Build and test
+      run: |
+        chmod +x test/test.sh
+        ./test/test.sh
