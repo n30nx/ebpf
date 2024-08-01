@@ -2,6 +2,23 @@
 #include <bpf/bpf_helpers.h>
 #include <linux/types.h>
 
+#define LOOP_MAX 32
+
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} events SEC(".maps");
+
+struct execve_event {
+    __u32 pid;
+    __u32 tgid;
+    __s32 syscall_nr;
+    char comm[16];
+    char filename[256];
+    char argv[32][256];
+    char envp[32][256];
+};
+
 struct exec_info {
     __u16 common_type;            // Offset=0, size=2
     __u8  common_flags;           // Offset=2, size=1
@@ -15,64 +32,58 @@ struct exec_info {
     const __u8 *const *envp;      // Offset=32, size=8 (pointer)
 };
 
-#undef bpf_printk
-#define bpf_printk(fmt, ...)                            \
-{                                                       \
-        static const char ____fmt[] = fmt;              \
-        bpf_trace_printk(____fmt, sizeof(____fmt),      \
-                         ##__VA_ARGS__);                \
-}
-
+// Use the correct signature for the tracepoint. For syscalls, you can use 'args' directly.
 SEC("tracepoint/syscalls/sys_enter_execve")
-__s32 bpf_prog_sys_enter_execve(struct exec_info *ctx)
-{
-    __u16 i;
-    __s32 ret;
-    __u8 data[256];
+int sys_enter_execve(struct exec_info *ctx) {
+    struct execve_event *event;
     const __u8 *ptr;
+    int ret;
+    // char data[256];
 
-    if (ctx == NULL) {
-        bpf_printk("ERR");
-        return 1;
-    }
-    if (ctx->filename == NULL) {
-        bpf_printk("ERR");
-        return 1;
-    }
+    event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
+    if (!event)
+        return 0;
 
-    __s32 pid = bpf_get_current_pid_tgid() >> 32;
-    bpf_printk("PID: %d, execve(%s, ", pid, ctx->filename);
+    __u64 id = bpf_get_current_pid_tgid();
 
-    for (i = 0; i < 128; i++) {
+    event->pid = id;
+    event->tgid = id >> 32;
+
+    bpf_probe_read_user_str(event->filename, sizeof(event->filename), (void *)ctx->filename);
+    
+    int i;
+
+    #pragma unroll
+    for (i = 0; i < LOOP_MAX; i++) {
         ret = bpf_probe_read_user(&ptr, sizeof(ptr), &ctx->argv[i]);
         if (ret || !ptr) {
-            bpf_printk("goto envp;");
+            event->argv[i][0] = 0;
             break;
         }
 
-        ret = bpf_probe_read_user_str(data, sizeof(data), ptr);
+        ret = bpf_probe_read_user_str(event->argv[i], sizeof(event->argv[i]), ptr);
         if (ret < 0) {
+            event->argv[i][0] = 0;
             break;
         }
-
-        bpf_printk("argv[%d] = %s", i, data);
     }
 
-    for (i = 0; i < 128; i++) {
+    #pragma unroll
+    for (i = 0; i < LOOP_MAX; i++) {
         ret = bpf_probe_read_user(&ptr, sizeof(ptr), &ctx->envp[i]);
         if (ret || !ptr) {
-            bpf_printk("goto envp;");
+            event->envp[i][0] = 0;
             break;
         }
 
-        ret = bpf_probe_read_user_str(data, sizeof(data), ptr);
+        ret = bpf_probe_read_user_str(event->envp[i], sizeof(event->envp[i]), ptr);
         if (ret < 0) {
+            event->envp[i][0] = 0;
             break;
         }
-
-        bpf_printk("envp[%d] = %s", i, data);
     }
 
+    bpf_ringbuf_submit(event, 0);
     return 0;
 }
 
