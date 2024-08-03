@@ -9,21 +9,19 @@
 #include <fcntl.h>
 #include <sys/resource.h>
 
-#define LOOP_MAX 32
+#include "include/common/common.h"
+#include "include/userspace/json.h"
+#include "include/userspace/filter.h"
 
 // TODO:
 // make output json
-// add filtering mechanism
+// add filtering mechanism (In Progress: 50% maybe?)
 
-struct execve_event {
-    __u32 pid;
-    __u32 tgid;
-    __s32 syscall_nr;
-    char comm[16];
-    char filename[256]; 
-    char argv[32][256];
-    char envp[32][256];
-};
+filter_t *filter;
+char *filename;
+FILE *fp;
+
+int y = 0;
 
 static int handle_event(void *ctx, void *data, size_t data_sz) {
     struct execve_event *event = (struct execve_event *)data;
@@ -33,19 +31,32 @@ static int handle_event(void *ctx, void *data, size_t data_sz) {
         return 0; // Continue polling
     }
 
-    printf("PID: %u TGID: %u Command: %s Filename: %s\n", event->pid, event->tgid, event->comm, event->filename);
+    /*for (i = 0; i < LOOP_MAX; i++) {
+        if (event->envp[i][0] == 0) break;
+        const char *res = filter_data(event->envp[i], filter);
+        if (res != event->envp[i]) return 0;
+    }
 
-    int i;
-    #pragma unroll
     for (i = 0; i < LOOP_MAX; i++) {
         if (event->argv[i][0] == 0) break;
         printf("argv[%d] = %s\n", i, event->argv[i]);
     }
 
-    #pragma unroll
     for (i = 0; i < LOOP_MAX; i++) {
         if (event->envp[i][0] == 0) break;
         printf("envp[%d] = %s\n", i, event->envp[i]);
+    }*/
+
+    write_json(fp, event);
+
+    printf("PID: %u TGID: %u Command: %s Filename: %s Syscall: %d\n", event->pid, event->tgid, event->comm, event->filename, event->syscall_nr);
+
+    y++;
+
+    if (y == 7) {
+        fprintf(fp, "}\n");
+        fclose(fp);
+        exit(0);
     }
 
     return 0;
@@ -58,11 +69,22 @@ int main(int argc, char **argv) {
     struct ring_buffer *rb;
     int map_fd;
 
+    filter = (filter_t*)malloc(sizeof(filter_t));
+    filter->redundant = (char**)malloc(sizeof(char*) * 1);
+    filter->redundant[0] = (char*)malloc(sizeof(char) * 11);
+    strcpy(filter->redundant[0], "HISTSIZE\0");
+    filter->redundant_len = 1;
+
+    filename = (char*)malloc(sizeof(char) * 12);
+    strcpy(filename, "new.json");
+    
+    fp = fopen(filename, "w");
+
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <EBPF_PROGRAM.o>\n", argv[0]);
         return 1;
     }
-
+    
     struct rlimit r = {RLIM_INFINITY, RLIM_INFINITY};
     if (setrlimit(RLIMIT_MEMLOCK, &r)) {
         perror("setrlimit(RLIMIT_MEMLOCK)");

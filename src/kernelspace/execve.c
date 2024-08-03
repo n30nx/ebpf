@@ -2,22 +2,12 @@
 #include <bpf/bpf_helpers.h>
 #include <linux/types.h>
 
-#define LOOP_MAX 32
+#include "../../include/common/common.h"
 
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 256 * 1024);
+    __uint(max_entries, MAX_ARGSIZE * 1024);
 } events SEC(".maps");
-
-struct execve_event {
-    __u32 pid;
-    __u32 tgid;
-    __s32 syscall_nr;
-    char comm[16];
-    char filename[256];
-    char argv[32][256];
-    char envp[32][256];
-};
 
 struct exec_info {
     __u16 common_type;            // Offset=0, size=2
@@ -48,6 +38,7 @@ int sys_enter_execve(struct exec_info *ctx) {
 
     event->pid = id;
     event->tgid = id >> 32;
+    event->syscall_nr = ctx->syscall_nr;
 
     bpf_probe_read_user_str(event->filename, sizeof(event->filename), (void *)ctx->filename);
     
