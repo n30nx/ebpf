@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define LOOP_MAX 32
+#define LOOP_MAX 64
 #define MAX_ARGSIZE 256
 
 struct execve_event {
