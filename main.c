@@ -112,7 +112,7 @@ static int handle_open(void *ctx, void *data, size_t data_sz) {
     // printf("elapsed: %lu\n", time(NULL) - ti);
     //printf("4\n");
 
-    printf("PID: %d TGID: %u Flags: %u Mode: %d Filename: %s\n", event->pid, event->tgid, event->flags, event->mode, event->filename);
+    printf("PID: %d TGID: %u Flags: %llu Mode: %d Filename: %s\n", event->pid, event->tgid, event->flags, event->mode, event->filename);
     write_json_open(fp_open, event);
     fprintf(fp_open, ",");
     
