@@ -13,7 +13,7 @@
 #include <assert.h>
 #include <sys/resource.h>
 #include <net/if.h>
-#include <xdp/libxdp.h>
+// #include <xdp/libxdp.h>
 
 #include "include/common/common.h"
 #include "include/userspace/json.h"
@@ -125,6 +125,7 @@ static int handle_open(void *ctx, void *data, size_t data_sz) {
     return 0;
 }
 
+/*
 static int handle_network(void *ctx, void *data, size_t data_sz) {
     struct net_event *event = (struct net_event *)data;
     
@@ -160,6 +161,7 @@ static int handle_network(void *ctx, void *data, size_t data_sz) {
 
     return 0;
 }
+*/
 
 void signal_handler(int signum) {
     // pthread_mutex_lock(&file_lock);
@@ -228,7 +230,7 @@ int load_bpf_program(const char *restrict filename, const char *restrict type, i
     return 0;
 }
 
-static int load_xdp_program(const char *restrict filename, const char *restrict iface, int (*function)(void *ctx, void *data, size_t data_sz), int i) {
+/*static int load_xdp_program(const char *restrict filename, const char *restrict iface, int (*function)(void *ctx, void *data, size_t data_sz), int i) {
     struct bpf_program *prog;
     int prog_fd, err, map_fd;
     int ifindex = if_nametoindex(iface);
@@ -241,11 +243,11 @@ static int load_xdp_program(const char *restrict filename, const char *restrict 
 	char errmsg[1024];
 	// int prog_fd, err; // = EXIT_SUCCESS;
 
-	/*struct config cfg = {
+	struct config cfg = {
 		.attach_mode = XDP_MODE_UNSPEC,
 		.ifindex   = ifindex,
 		.do_unload = false,
-	};*/
+	};
 
 	DECLARE_LIBBPF_OPTS(bpf_object_open_opts, bpf_opts);
 	DECLARE_LIBXDP_OPTS(xdp_program_opts, xdp_opts,
@@ -285,7 +287,7 @@ static int load_xdp_program(const char *restrict filename, const char *restrict 
         fprintf(stderr, "Failed to open BPF object file: %s\n", filename);
         return 1;
     }
-/*
+
     err = bpf_object__load(b_obj[i]);
     if (err) {
         fprintf(stderr, "Failed to load BPF object: %s\n", strerror(-err));
@@ -299,7 +301,7 @@ static int load_xdp_program(const char *restrict filename, const char *restrict 
     }
 
     prog_fd = bpf_program__fd(prog);
-*/
+
     map_fd = bpf_object__find_map_fd_by_name(b_obj[i], "events");
     if (map_fd < 0) {
         fprintf(stderr, "Failed to find BPF map\n");
@@ -324,7 +326,7 @@ static int load_xdp_program(const char *restrict filename, const char *restrict 
     }
 
     return 0;
-}
+}*/
 
 void *poll_ring_buffer(void *arg) {
     struct ring_buffer *rb = (struct ring_buffer*)arg;

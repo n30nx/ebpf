@@ -192,13 +192,13 @@ const bool write_json_network(FILE *file, struct net_event *event) {
     free(start);
 
     char *pid = (char*)malloc(sizeof(char) * 64);
-    sprintf(pid, "\"pid\":%lu,", event->pid);
+    sprintf(pid, "\"pid\":%llu,", event->pid);
     res = writecur(file, pid, 0);
     checkerr();
     free(pid);
 
     char *tgid = (char*)malloc(sizeof(char) * 64);
-    sprintf(tgid, "\"tgid\":%lu,", event->tgid);
+    sprintf(tgid, "\"tgid\":%llu,", event->tgid);
     res = writecur(file, tgid, 0);
     checkerr();
     free(tgid);
@@ -273,7 +273,7 @@ const bool write_json_open(FILE *file, struct open_event *event) {
 
     fprintf(file, "\"pid\":%u,", event->pid);
     fprintf(file, "\"tgid\":%u,", event->tgid);
-    fprintf(file, "\"flags\":%d,", event->flags);
+    fprintf(file, "\"flags\":%lld,", event->flags);
     fprintf(file, "\"mode\":%u", event->mode);
 
     fprintf(file, "}");

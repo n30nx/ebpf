@@ -1,4 +1,4 @@
-#include <linux/bpf.h>
+/*#include <linux/bpf.h>
 #include <bpf/bpf_helpers.h>
 #include <linux/if_ether.h>
 #include <linux/ip.h>
@@ -67,4 +67,4 @@ int handle_xdp(struct xdp_md *ctx) {
     bpf_ringbuf_submit(event, 0);
 
     return XDP_PASS;
-}
+}*/
