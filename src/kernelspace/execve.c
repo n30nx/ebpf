@@ -47,13 +47,15 @@ int sys_enter_execve(struct exec_info *ctx) {
     #pragma unroll
     for (i = 0; i < LOOP_MAX; i++) {
         ret = bpf_probe_read_user(&ptr, sizeof(ptr), &ctx->argv[i]);
-        if (ret || !ptr) {
+        if (ret < 0 || !ptr) {
+            event->argv_len = i;
             event->argv[i][0] = 0;
             break;
         }
 
         ret = bpf_probe_read_user_str(event->argv[i], sizeof(event->argv[i]), ptr);
         if (ret < 0) {
+            event->argv_len = i;
             event->argv[i][0] = 0;
             break;
         }
@@ -62,13 +64,15 @@ int sys_enter_execve(struct exec_info *ctx) {
     #pragma unroll
     for (i = 0; i < LOOP_MAX; i++) {
         ret = bpf_probe_read_user(&ptr, sizeof(ptr), &ctx->envp[i]);
-        if (ret || !ptr) {
+        if (ret < 0 || !ptr) {
+            event->envp_len = i;
             event->envp[i][0] = 0;
             break;
         }
 
         ret = bpf_probe_read_user_str(event->envp[i], sizeof(event->envp[i]), ptr);
         if (ret < 0) {
+            event->envp_len = i;
             event->envp[i][0] = 0;
             break;
         }
