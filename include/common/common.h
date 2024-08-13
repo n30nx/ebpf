@@ -40,4 +40,4 @@ struct net_event {
     __u8 daddr[16];
 };
 
-const size_t arrlen(const char argv[LOOP_MAX][MAX_ARGSIZE]);
+size_t arrlen(const char argv[LOOP_MAX][MAX_ARGSIZE]);

@@ -33,7 +33,6 @@ struct openat2_info {
 SEC("tracepoint/syscalls/sys_enter_openat2")
 int sys_enter_openat2(struct openat2_info *ctx) {
     struct open_event *event;
-    int ret;
     __u64 id = bpf_get_current_pid_tgid();
 
     event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
@@ -42,8 +41,7 @@ int sys_enter_openat2(struct openat2_info *ctx) {
 
     event->pid = id;
     event->tgid = id >> 32;
-    // get the filename
-    ret = bpf_probe_read_user_str(event->filename, sizeof(event->filename), (void *)ctx->filename);
+    bpf_probe_read_user_str(event->filename, sizeof(event->filename), (void *)ctx->filename);
     event->flags = 0;
     event->mode = 0;
 

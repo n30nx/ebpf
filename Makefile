@@ -1,8 +1,8 @@
 CL=clang
 CC=gcc
 
-KOPTIONS=-O2 -g -c -target bpf
-OPTIONS=-lbpf -lelf
+KOPTIONS=-O2 -g -c -target bpf -Wall -Wextra
+OPTIONS=-lbpf -lelf -Wall -Wextra
 INCLUDE=./include/userspace
 
 build: build_kernelspace
