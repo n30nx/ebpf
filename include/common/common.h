@@ -9,6 +9,7 @@ typedef __u8 umode_t;
 #define MAX_ARGSIZE 256
 
 struct execve_event {
+    __u64 timestamp;
     __u32 pid;
     __u32 tgid;
     __s32 syscall_nr;
@@ -21,6 +22,7 @@ struct execve_event {
 };
 
 struct open_event {
+    __u64 timestamp;
     __s32 pid;
     __u32 tgid;
     __u64 flags;
@@ -40,4 +42,5 @@ struct net_event {
     __u8 daddr[16];
 };
 
+// debug
 size_t arrlen(const char argv[LOOP_MAX][MAX_ARGSIZE]);

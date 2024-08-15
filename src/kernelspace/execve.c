@@ -22,13 +22,11 @@ struct exec_info {
     const __u8 *const *envp;      // Offset=32, size=8 (pointer)
 };
 
-// Use the correct signature for the tracepoint. For syscalls, you can use 'args' directly.
 SEC("tracepoint/syscalls/sys_enter_execve")
 int sys_enter_execve(struct exec_info *ctx) {
     struct execve_event *event;
     const __u8 *ptr;
     int ret;
-    // char data[256];
 
     event = bpf_ringbuf_reserve(&events, sizeof(*event), 0);
     if (!event)
@@ -36,6 +34,7 @@ int sys_enter_execve(struct exec_info *ctx) {
 
     __u64 id = bpf_get_current_pid_tgid();
 
+    event->timestamp = bpf_ktime_get_ns();
     event->pid = id;
     event->tgid = id >> 32;
     event->syscall_nr = ctx->syscall_nr;

@@ -22,14 +22,6 @@ struct openat_info {
     umode_t mode;                      // offset:40;      size:8; signed:0;
 };
 
-#undef bpf_printk
-#define bpf_printk(fmt, ...)                            \
-{                                                       \
-        static const char ____fmt[] = fmt;              \
-        bpf_trace_printk(____fmt, sizeof(____fmt),      \
-                         ##__VA_ARGS__);                \
-}
-
 SEC("tracepoint/syscalls/sys_enter_openat")
 int sys_enter_openat(struct openat_info *ctx) {
     struct open_event *event;
@@ -39,6 +31,7 @@ int sys_enter_openat(struct openat_info *ctx) {
     if (!event)
         return 0;
 
+    event->timestamp = bpf_ktime_get_ns();
     event->pid = id;
     event->tgid = id >> 32;
  
@@ -46,7 +39,7 @@ int sys_enter_openat(struct openat_info *ctx) {
     event->flags = ctx->flags;
     event->mode = ctx->mode;
 
-    bpf_printk("openat: %s, read: %s\n", ctx->filename, event->filename);
+    // bpf_printk("openat: %s, read: %s\n", ctx->filename, event->filename);
 
     bpf_ringbuf_submit(event, 0);
     return 0;
