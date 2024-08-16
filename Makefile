@@ -4,7 +4,7 @@ CC=gcc
 KOPTIONS=-O2 -g -c -target bpf -Wall -Wextra
 OPTIONS=-lbpf -lelf -Wall -Wextra -Wall -Wextra
 INCLUDE=./include/userspace
-OPTS=-fsanitize=address -g -c -I $(INCLUDE)
+OPTS=-g -c -I $(INCLUDE)
 
 build: build_kernelspace
 
@@ -14,7 +14,7 @@ build_userspace: clean
 	$(CC) src/userspace/json.c -o build/json.o $(OPTS)
 	$(CC) src/common/common.c -o build/common.o $(OPTS)
 	$(CC) main.c -o build/main.o -pthread $(OPTS)
-	$(CC) $(OPTIONS) -o loader build/*.o -fsanitize=address -g -pthread
+	$(CC) $(OPTIONS) -o loader build/*.o -g -pthread
 
 build_kernelspace: build_userspace
 	$(CL) $(KOPTIONS) src/kernelspace/open.c -o open.o

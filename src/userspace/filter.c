@@ -6,20 +6,24 @@
 
 #include "../../include/userspace/filter.h"
 
-/*
- * typedef struct {
- *     char **redundant;
- *     size_t redundant_len;
- * } filter_t
- */
+static inline bool conf_null(filter_t *restrict config) {
+    if (config == NULL) {
+        printf("redundant = NULL, returning...\n");
+        return false;
+    }
+    return true;
+}
 
 const char *filter_data(char *restrict haystack, filter_t *restrict config) {
     char *res = NULL;
 
-    for (size_t i = 0; i < config->redundant_len; i++) {
+    for (size_t i = 0; conf_null(config) && i < config->redundant_len; i++) {
+        /*if (config == NULL) {
+            printf("redundant = NULL, returning...");
+            return NULL;
+        }*/
         char *tmp = strstr(haystack, config->redundant[i]);
         if (tmp != NULL) {
-            // printf("eliminated %s\n", haystack);
             return NULL;
         }
     }
@@ -28,7 +32,11 @@ const char *filter_data(char *restrict haystack, filter_t *restrict config) {
 }
 
 const char *filter_data_exact(char *restrict haystack, filter_t *restrict config) {
-    for (size_t i = 0; i < config->redundant_exact_len; i++) {
+    for (size_t i = 0; conf_null(config) && i < config->redundant_exact_len; i++) {
+        /*if (config == NULL) {
+            printf("redundant = NULL, returning...");
+            return NULL;
+        }*/
         if (strcmp(haystack, config->redundant_exact[i]) == 0) {
             return NULL;
         }

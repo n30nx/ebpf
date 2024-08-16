@@ -31,7 +31,7 @@ int sys_enter_openat(struct openat_info *ctx) {
     if (!event)
         return 0;
 
-    event->timestamp = bpf_ktime_get_ns();
+    // event->timestamp = bpf_ktime_get_ns();
     event->pid = id;
     event->tgid = id >> 32;
  

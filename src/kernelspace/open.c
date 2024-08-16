@@ -30,8 +30,8 @@ int sys_enter_open(struct open_info *ctx) {
     if (!event)
         return 0;
 
-    event->timestamp = bpf_ktime_get_ns();
-    bpf_printk("ts: %llu, %llu", event->timestamp, bpf_ktime_get_ns());
+    // event->timestamp = bpf_ktime_get_ns();
+    // bpf_printk("ts: %llu, %llu", event->timestamp, bpf_ktime_get_ns());
     event->pid = id;
     event->tgid = id >> 32;
     bpf_probe_read_user_str(event->filename, sizeof(event->filename), (void *)ctx->filename);

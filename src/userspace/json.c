@@ -73,13 +73,13 @@ static inline char* replace_char(const char *str, char find, char replace) {
     return new_str;
 }
 
-const bool write_json_execve(FILE *file, struct execve_event *event) {
+const bool write_json_execve(FILE *file, uint64_t timestamp, struct execve_event *event) {
     fprintf(file, "{");
     
     //char *start = (char*)malloc(sizeof(char) * 100);
     //assert(start);
 
-    fprintf(file, "\"timestamp\":%lu,", event->timestamp);
+    fprintf(file, "\"timestamp\":%lu,", timestamp);
     //free(start);
 
     char *program = replace_char(event->filename, '"', '-');
@@ -192,94 +192,10 @@ const bool write_json_execve(FILE *file, struct execve_event *event) {
     return true;
 }
 
-/* const bool write_json_network(FILE *file, struct net_event *event) {
-    writecur(file, "{", 0);
-
-    const time_t timestamp = time(NULL);
-    
-    char *start = (char*)malloc(sizeof(char) * 100);
-    assert(start);
-
-    sprintf(start, "\"timestamp\":%lu,", timestamp);
-    int res = writecur(file, start, 0);
-    checkerr();
-    free(start);
-
-    char *pid = (char*)malloc(sizeof(char) * 64);
-    assert(pid);
-
-    sprintf(pid, "\"pid\":%llu,", event->pid);
-    res = writecur(file, pid, 0);
-    checkerr();
-    free(pid);
-
-    char *tgid = (char*)malloc(sizeof(char) * 64);
-    assert(tgid);
-
-    sprintf(tgid, "\"tgid\":%llu,", event->tgid);
-    res = writecur(file, tgid, 0);
-    checkerr();
-    free(tgid);
-
-    char *protocol = (char*)malloc(sizeof(char) * 64);
-    assert(protocol);
-
-    sprintf(protocol, "\"protocol\":%u,", event->protocol);
-    res = writecur(file, protocol, 0);
-    checkerr();
-    free(protocol);
-
-    char *family = (char*)malloc(sizeof(char) * 64);
-    assert(family);
-
-    sprintf(family, "\"family\":%u,", event->family);
-    res = writecur(file, family, 0);
-    checkerr();
-    free(family);
-
-    char saddr_str[INET6_ADDRSTRLEN];
-    char daddr_str[INET6_ADDRSTRLEN];
-
-    if (event->family == AF_INET) {
-        inet_ntop(AF_INET, event->saddr, saddr_str, sizeof(saddr_str));
-        inet_ntop(AF_INET, event->daddr, daddr_str, sizeof(daddr_str));
-    } else if (event->family == AF_INET6) {
-        inet_ntop(AF_INET6, event->saddr, saddr_str, sizeof(saddr_str));
-        inet_ntop(AF_INET6, event->daddr, daddr_str, sizeof(daddr_str));
-    }
-
-    char *saddr = (char*)malloc(sizeof(char) * (strlen(saddr_str) + 20));
-    assert(saddr);
-
-    sprintf(saddr, "\"saddr\":\"%s\",", saddr_str);
-    res = writecur(file, saddr, 0);
-    checkerr();
-    free(saddr);
-
-    char *daddr = (char*)malloc(sizeof(char) * (strlen(daddr_str) + 20));
-    assert(daddr);
-
-    sprintf(daddr, "\"daddr\":\"%s\",", daddr_str);
-    res = writecur(file, daddr, 0);
-    checkerr();
-    free(daddr);
-
-    char *dport = (char*)malloc(sizeof(char) * 64);
-    assert(dport);
-
-    sprintf(dport, "\"dport\":%u", ntohs(event->dport));
-    res = writecur(file, dport, 0);
-    checkerr();
-    free(dport);
-
-    res = writecur(file, "}", 0);
-    return true;
-} */
-
-const bool write_json_open(FILE *file, struct open_event *event) {
+const bool write_json_open(FILE *file, uint64_t timestamp, struct open_event *event) {
     fprintf(file, "{");
     
-    fprintf(file, "\"timestamp\":%lu,", event->timestamp);
+    fprintf(file, "\"timestamp\":%lu,", timestamp);
     
     // Safe handling of filename field to escape quotes
     //char *escaped_filename = (char*)malloc(strlen(event->filename) * 2);  // Worst case every character needs escaping

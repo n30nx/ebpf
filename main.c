@@ -35,6 +35,7 @@ static int handle_execve(void *ctx, void *data, size_t data_sz) {
         fprintf(stderr, "Invalid event size\n");
         return 0;
     }
+    uint64_t timestamp = time(NULL);
 
     int i;
     for (i = 0; i < LOOP_MAX; i++) {
@@ -46,7 +47,7 @@ static int handle_execve(void *ctx, void *data, size_t data_sz) {
     }
 
     flockfile(fp);
-    write_json_execve(fp, event);
+    write_json_execve(fp, timestamp, event);
     fprintf(fp, ",");
     funlockfile(fp);
     
@@ -63,6 +64,7 @@ static int handle_open(void *ctx, void *data, size_t data_sz) {
         fprintf(stderr, "Invalid event size\n");
         return 1;
     }
+    uint64_t timestamp = time(NULL);
 
     time_t ti = time(NULL);
     const char *res = filter_data_exact(event->filename, open_filter);
@@ -72,7 +74,7 @@ static int handle_open(void *ctx, void *data, size_t data_sz) {
     if (res != event->filename) return 1;
 
     flockfile(fp);
-    write_json_open(fp, event);
+    write_json_open(fp, timestamp, event);
     fprintf(fp, ",");
     funlockfile(fp);
 
@@ -88,8 +90,9 @@ void signal_handler(int signum) {
     fprintf(fp, "]");
     fclose(fp);
 
-    free_filter(filter);
-    free_filter(open_filter);
+    //free_filter(filter);
+
+    //free_filter(open_filter);
 
     for (int i = 0; i < BPF_COUNT; i++) {
         ring_buffer__free(b_rb[i]);

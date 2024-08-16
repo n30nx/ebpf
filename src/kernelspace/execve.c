@@ -34,7 +34,7 @@ int sys_enter_execve(struct exec_info *ctx) {
 
     __u64 id = bpf_get_current_pid_tgid();
 
-    event->timestamp = bpf_ktime_get_ns();
+    // event->timestamp = bpf_ktime_get_ns();
     event->pid = id;
     event->tgid = id >> 32;
     event->syscall_nr = ctx->syscall_nr;
