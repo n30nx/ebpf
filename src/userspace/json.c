@@ -1,14 +1,14 @@
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
 #include <assert.h>
 
 #include "../../include/common/common.h"
 
 // #define max(a, b) ((a > b) ? (a) : (b))
-#define checkerr() { if (res < 0) return false; }
+// #define checkerr() { if (res < 0) return false; }
 
 /*
  * struct data {
@@ -25,7 +25,7 @@
  *
  */
 
-__attribute__((always_inline))
+/* __attribute__((always_inline))
 static inline const int writecur(FILE *f, const char *restrict data, int indent) {
     if (indent < 0) {
         return -1;
@@ -37,7 +37,7 @@ static inline const int writecur(FILE *f, const char *restrict data, int indent)
     }
     int res = fprintf(f, "%s", data);
     return res;
-}
+} */
 
 __attribute__((always_inline))
 static inline const int envsep(const char *arg) {
@@ -47,99 +47,182 @@ static inline const int envsep(const char *arg) {
 }
 
 __attribute__((always_inline))
-static inline void replace_char(char *str, char find, char replace){
-    char *current_pos = strchr(str,find);
-    while (current_pos) {
-        *current_pos = replace;
-        current_pos = strchr(current_pos,find);
+static inline char* replace_char(const char *str, char find, char replace) {
+    size_t len = strlen(str);
+    char *new_str = (char*)malloc(len + 1); // Allocate memory for the new string
+    assert(new_str);
+
+    const char *src = str;
+    char *dst = new_str;
+
+    while (*src) {
+        if (*src == '\\') {
+            *dst = '_';
+        } else if (*src == '"') {
+            *dst = '-';
+        } else {
+            *dst = *src;
+        }
+        // *dst = (*src == find) ? replace : *src;
+        src++;
+        dst++;
     }
+
+    *dst = '\0'; // Null-terminate the new string
+
+    return new_str;
 }
 
-const bool write_json(FILE *file, struct execve_event *event) {
-    writecur(file, "{", 0);
-
-    const time_t timestamp = time(NULL);
+const bool write_json_execve(FILE *file, uint64_t timestamp, struct execve_event *event) {
+    fprintf(file, "{");
     
-    char *start = (char*)malloc(sizeof(char) * 100);
-    assert(start);
+    //char *start = (char*)malloc(sizeof(char) * 100);
+    //assert(start);
 
-    sprintf(start, "\"timestamp\":%lu,", timestamp);
-    int res = writecur(file, start, 0);
-    checkerr();
-    free(start);
+    fprintf(file, "\"timestamp\":%lu,", timestamp);
+    //free(start);
 
-    char *program = (char*)malloc(sizeof(char) * (strlen(event->filename) + 24));
-    replace_char(event->filename, '"', '\2');
-    sprintf(program, "\"filename\":\"%s\",", event->filename);
-    res = writecur(file, program, 0);
-    checkerr();
+    char *program = replace_char(event->filename, '"', '-');
+    assert(program);
+
+    //char *program_str = (char*)malloc(sizeof(char) * (strlen(program) + 24));
+    //assert(program_str);
+
+    fprintf(file, "\"filename\":\"%s\",", program);
+    //res = writecur(file, program_str, 0);
+    //checkerr();
+    //free(program_str);
     free(program);
 
-    char *pid = (char*)malloc(sizeof(char) * 64);
-    sprintf(pid, "\"pid\":%u,", event->pid);
-    res = writecur(file, pid, 0);
-    checkerr();
-    free(pid);
+    //char *pid = (char*)malloc(sizeof(char) * 64);
+    //assert(pid);
 
-    char *tgid = (char*)malloc(sizeof(char) * 64);
-    sprintf(tgid, "\"tgid\":%u,", event->tgid);
-    res = writecur(file, tgid, 0);
-    checkerr();
-    free(tgid);
+    fprintf(file, "\"pid\":%u,", event->pid);
+    //res = writecur(file, pid, 0);
+    //checkerr();
+    //free(pid);
 
-    char *syscall_nr = (char*)malloc(sizeof(char) * 64);
-    sprintf(syscall_nr, "\"syscall_nr\":%d,", event->syscall_nr);
-    res = writecur(file, syscall_nr, 0);
-    checkerr();
-    free(syscall_nr);
+    //char *tgid = (char*)malloc(sizeof(char) * 64);
+    //assert(tgid);
 
-    res = writecur(file, "\"arguments\":[", 0);
-    checkerr();
+    fprintf(file, "\"tgid\":%u,", event->tgid);
+    //res = writecur(file, tgid, 0);
+    //checkerr();
+    //free(tgid);
+
+    //char *syscall_nr = (char*)malloc(sizeof(char) * 64);
+    //assert(syscall_nr);
+
+    fprintf(file, "\"syscall_nr\":%d,", event->syscall_nr);
+    //res = writecur(file, syscall_nr, 0);
+    //checkerr();
+    //free(syscall_nr);
+
+    fprintf(file, "\"arguments\":[");
+    // checkerr();
 
     const size_t argvlen = arrlen(event->argv);
 
     int i;
-    for (i = 0; i < argvlen; i++) { 
-        char *tmp = (char*)malloc(sizeof(char) * (128 + strlen(event->argv[i]))); // "env": "env",\n
+    for (i = 0; i < event->argv_len; i++) {
+        /*if (event->argv[i][0] == 0) {
+            fprintf(file, ",");
+            checkerr();
+            break;
+        }*/
+
+        char *tmp = replace_char(event->argv[i], '"', '-');
         assert(tmp);
 
-        replace_char(event->envp[i], '"', '\2');
+        //char *arg_str = (char*)malloc(sizeof(char) * (128 + strlen(tmp)));
+        //assert(arg_str);
 
-        sprintf(tmp, "\"%s\"", event->argv[i]);
-        res = writecur(file, tmp, 0);
-        if ((i + 1) != argvlen) {
+        fprintf(file, "\"%s\"", tmp);
+        //res = writecur(file, arg_str, 0);
+        if ((i + 1) != event->argv_len) {
             fprintf(file, ",");
         }
-        checkerr();
+        //checkerr();
+        //free(arg_str);
         free(tmp);
     }
 
-    res = writecur(file, "],", 0);
-    checkerr();
+    fprintf(file, "],");
+    //checkerr();
 
-    res = writecur(file, "\"environment\":{", 0);
-    checkerr();
+    fprintf(file, "\"environment\":{");
+    //checkerr();
 
     const size_t envplen = arrlen(event->envp);
 
-    for (i = 0; i < envplen; i++) {
+    for (i = 0; i < event->envp_len; i++) {
+        /*if (event->envp[i][0] == 0) {
+            fprintf(file, ",");
+            checkerr();
+            break;
+        }*/
+
         int sep = envsep(event->envp[i]);
-        char *tmp = (char*)malloc(sizeof(char) * (10 + strlen(event->envp[i]))); // "env": "env",\n
+        char *tmp = replace_char(event->envp[i], '"', '-');
         assert(tmp);
 
-        replace_char(event->envp[i], '"', '\2');
+        char *env_str = (char*)malloc(sizeof(char) * (150 + strlen(tmp)));
+        assert(env_str);
 
-        snprintf(tmp, sep + 2, "\"%s", event->envp[i]);
-        sprintf(tmp + sep + 1, "\":\"%s\"", event->envp[i] + sep + 1);
-        res = writecur(file, tmp, 0);
-        if ((i + 1) != envplen) {
+        snprintf(env_str, sep + 2, "\"%s", tmp);
+        if (sep + 1 >= strlen(tmp)) {
+            if (sep + 1 >= strlen(env_str)) {
+                goto end;
+            }
+        } else {
+            sprintf(env_str + sep + 1, "\":\"%s\"", tmp + sep + 1);
+        }
+        fprintf(file, "%s", env_str);
+        
+    end:
+        if ((i + 1) != event->envp_len) {
             fprintf(file, ",");
         }
-        checkerr();
+        //checkerr();
+        free(env_str);
         free(tmp);
     }
 
-    res = writecur(file, "}}", 0);
+    fprintf(file, "}}");
+    return true;
+}
+
+const bool write_json_open(FILE *file, uint64_t timestamp, struct open_event *event) {
+    fprintf(file, "{");
+    
+    fprintf(file, "\"timestamp\":%lu,", timestamp);
+    
+    // Safe handling of filename field to escape quotes
+    //char *escaped_filename = (char*)malloc(strlen(event->filename) * 2);  // Worst case every character needs escaping
+    //assert(escaped_filename);
+    /*const char *src = event->filename;
+    char *dst = escaped_filename;
+    while (*src) {
+        if (*src == '"' || *src = '\\') {
+            *dst++ = '-';  // Escape double quotes
+        }
+        *dst++ = *src++;
+    }
+    *dst = '\0';*/
+
+    char *escaped_filename = replace_char(event->filename, 'a', 'b');
+    assert(escaped_filename);
+
+    fprintf(file, "\"filename\":\"%s\",", escaped_filename);
+    free(escaped_filename);
+
+    fprintf(file, "\"pid\":%u,", event->pid);
+    fprintf(file, "\"tgid\":%u,", event->tgid);
+    fprintf(file, "\"flags\":%lld,", event->flags);
+    fprintf(file, "\"mode\":%u", event->mode);
+
+    fprintf(file, "}");
+
     return true;
 }
 
